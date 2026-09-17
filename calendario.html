@@ -1,384 +1,264 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LabDeck - ZDC</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
-    <style>
-        :root { 
-            --ifma-green: #006633; 
-            --ifma-gold: #D4B277; 
-            --bg-white: #F8F6F0; 
-            --accent: #0AB0AB;
-            --bg-card: #ffffff;
-            --text-main: #2d3748;
-            --radius: 12px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-        }
-        
-        body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            background: var(--bg-white); 
-            margin: 0; padding: 0; 
-            color: var(--text-main); 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-            letter-spacing: -0.01em;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabDeck - ZDC | Calendário</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    :root {
+        --ifma-green: #006633;
+        --ifma-green-light: #00A651;
+        --ifma-gold: #D4B277;
+        --bg-app: #F1F5F1;
+        --card-bg: #ffffff;
+        --text-main: #1A2E22;
+        --radius: 14px;
+        --shadow: 0 4px 14px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--bg-app); color: var(--text-main); }
 
-        .header { 
-            background: white; 
-            border-bottom: 4px solid var(--ifma-green); 
-            padding: 15px 40px; 
-            box-shadow: var(--shadow); 
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            position: relative;
-        }
-        .header-titles { text-align: left; }
-        .header h1 { 
-            color: var(--ifma-green); 
-            margin: 0; 
-            font-size: 1.4rem; 
-            font-weight: 800;
-            letter-spacing: 0.5px; 
-        }
-        .header p { margin: 4px 0 0; font-size: 0.85rem; }
-        .header p a { color: #4a5568; text-decoration: none; font-weight: 600; transition: color 0.2s; }
-        .header p a:hover { color: var(--ifma-green); }
+    /* ===== TOPBAR ===== */
+    .topbar {
+        background: linear-gradient(135deg, #071A0F, #0D2818);
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 18px 34px; position: sticky; top: 0; z-index: 200;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+    .topbar .logo { color: #fff; font-weight: 900; font-size: 1.15rem; }
+    .topbar .logo span { color: var(--ifma-green-light); }
+    .topbar .logo-sub { color: rgba(255,255,255,0.4); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 8px; }
 
-        .btn-admin {
-            background: var(--ifma-green);
-            color: white; 
-            text-decoration: none; 
-            font-size: 0.85rem; 
-            font-weight: 700;
-            border: 2px solid var(--ifma-green); 
-            padding: 8px 24px; 
-            border-radius: 8px;
-            transition: all 0.2s ease-in-out;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0, 102, 51, 0.2);
-        }
-        .btn-admin:hover {
-            background: transparent;
-            color: var(--ifma-green);
-            box-shadow: none;
-            transform: translateY(-1px);
-        }
+    .btn-login-top {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, var(--ifma-green-light), var(--ifma-green));
+        color: #fff; text-decoration: none; font-weight: 800; font-size: 0.88rem;
+        padding: 10px 22px; border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0,166,81,0.3); transition: all 0.2s ease;
+    }
+    .btn-login-top:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,166,81,0.4); }
 
-        .main-content { 
-            width: 100%;
-            max-width: 1300px; 
-            margin: 15px auto; 
-            padding: 0 20px; 
-            box-sizing: border-box;
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-        }
+    /* ===== MAIN ===== */
+    .main { padding: 28px 34px; max-width: 1400px; margin: 0 auto; }
+    .topbar-page { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .topbar-page h1 { font-size: 1.5rem; font-weight: 800; margin: 0; }
+    .topbar-page p { margin: 2px 0 0; color: #64748b; font-size: 0.85rem; }
 
-        .toolbar {
-            background: white;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 15px;
-            padding: 16px 20px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 16px;
-            justify-content: space-between;
-        }
+    .filtros { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filtros select {
+        font-family: inherit; font-weight: 700; font-size: 0.85rem; color: var(--ifma-green);
+        background: var(--card-bg); border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer;
+        box-shadow: var(--shadow);
+    }
 
-        .toolbar-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    /* ===== TABS ===== */
+    .tabs-nav {
+        display: flex; gap: 8px; margin-bottom: 24px; background: #fff; padding: 6px;
+        border-radius: 12px; box-shadow: var(--shadow); width: fit-content;
+    }
+    .tab-btn {
+        border: none; background: transparent; padding: 10px 22px; border-radius: 9px;
+        font-family: inherit; font-weight: 700; font-size: 0.88rem; color: #64748b;
+        cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn.active { background: var(--ifma-green); color: #fff; box-shadow: 0 4px 10px rgba(0,102,51,0.25); }
+    .tab-btn:hover:not(.active) { background: #f1f5f9; color: var(--ifma-green); }
 
-        .toolbar-group label {
-            font-weight: 700;
-            color: var(--ifma-green);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-        #selectLab {
-            min-width: 220px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--text-main);
-            border: none;
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 10px 14px;
-            cursor: pointer;
-        }
+    /* ===== KPI CARDS ===== */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+    .kpi-card {
+        background: var(--card-bg); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+        display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--ifma-green-light);
+    }
+    .kpi-card span.label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
+    .kpi-card b.value { font-size: 1.7rem; font-weight: 900; color: var(--text-main); }
 
-        .select-custom {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.3rem; 
-            font-weight: 800; 
-            color: var(--ifma-green);
-            border: none;
-            background: #f1f5f9;
-            padding: 6px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            outline: none;
-        }
-        
-        .btn-nav { 
-            background: #f1f5f9; 
-            color: var(--ifma-green); 
-            border: none; 
-            padding: 8px 16px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 700; 
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-        }
-        .btn-nav:hover { background: var(--ifma-green); color: white; }
-        
-        .calendar-grid { 
-            display: grid; 
-            grid-template-columns: repeat(7, 1fr); 
-            gap: 8px; 
-            background: transparent;
-            flex: 1; 
-        }
-        
-        .day-name { 
-            background: var(--ifma-green); 
-            color: white; 
-            padding: 10px; 
-            text-align: center; 
-            font-size: 0.8rem; 
-            text-transform: uppercase; 
-            font-weight: 700; 
-            border-radius: 8px;
-            letter-spacing: 0.5px;
-        }
-        
-        .day-cell { 
-            background: var(--bg-card); 
-            min-height: 12vh; 
-            max-height: 22vh; 
-            overflow-y: auto; 
-            padding: 8px; 
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0,0,0,0.03);
-            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 6px; 
-        }
-        .day-cell::-webkit-scrollbar { width: 4px; }
-        .day-cell::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
-        
-        .day-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .day-cell.empty { background: rgba(0, 0, 0, 0.01); box-shadow: none; border: none; }
+    /* ===== GRID LAYOUT: CHARTS ===== */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 22px; align-items: start; }
+    .chart-card { background: var(--card-bg); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+    .chart-card h3 { margin: 0 0 14px; font-size: 0.95rem; font-weight: 800; color: var(--text-main); }
+    .chart-wrap { position: relative; height: 220px; }
+    .side-charts { display: flex; flex-direction: column; gap: 18px; }
 
-        .day-cell.today {
-            border: 4px solid var(--ifma-green);
-            background: #ffffff;
-            transform: scale(1.06) translateY(-6px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 
-                        0 10px 10px -5px rgba(0, 0, 0, 0.08), 
-                        0 0 0 3px rgba(0, 102, 51, 0.15);
-            z-index: 20;
-        }
-        .day-cell.today:hover {
-            transform: scale(1.09) translateY(-9px);
-            box-shadow: 0 25px 30px -5px rgba(0, 102, 51, 0.2), 
-                        0 12px 12px -5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .day-cell.today .day-number {
-            color: white;
-            background: var(--ifma-green);
-            font-weight: 900;
-            font-size: 1.3rem;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            margin-bottom: 4px;
-            box-shadow: 0 2px 4px rgba(0, 102, 51, 0.3);
-        }
-        
-        .day-number { font-weight: 700; color: #1a202c; font-size: 1.1rem; display: block; margin-bottom: 2px; }
-        
-        .holiday-label { 
-            background: #fff5f5;
-            color: #e53e3e; 
-            font-size: 10px; 
-            font-weight: 700; 
-            display: block; 
-            padding: 2px 6px;
-            border-radius: 4px;
-            border-left: 2px solid #e53e3e;
-            line-height: 1.2; 
-            margin-bottom: 2px;
-        }
-        
-        .event-tag { 
-            background: #f0fdfa; 
-            border: 1.5px solid var(--accent); 
-            border-radius: 6px; 
-            font-size: 0.68rem; 
-            padding: 4px 6px; 
-            color: #115e59; 
-            line-height: 1.3;
-            cursor: zoom-in;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column; 
-            align-items: flex-start;
-            gap: 3px; 
-            word-break: break-word;
-        }
-        .event-tag:hover { background: #e6fffa; box-shadow: 0 2px 4px rgba(10, 176, 171, 0.15); }
-        .event-tag b {
-            color: var(--ifma-green); 
-            font-weight: 800;
-            background: rgba(0, 102, 51, 0.08);
-            padding: 1px 4px;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            display: inline-block;
-            width: fit-content; 
-        }
-        .event-lab-tag {
-            color: var(--ifma-gold);
-            font-weight: 700;
-            font-size: 0.62rem;
-            text-transform: uppercase;
-        }
-        .event-title { width: 100%; font-weight: 500; }
+    /* ===== CALENDAR ===== */
+    .calendar-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .cal-header h3 { margin: 0; font-size: 1rem; font-weight: 800; }
+    .btn-nav { background: #f1f5f9; color: var(--ifma-green); border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem; }
+    .btn-nav:hover { background: var(--ifma-green); color: white; }
 
-        .rules-section { 
-            background: white; 
-            padding: 25px; 
-            margin-top: 20px; 
-            border-radius: var(--radius); 
-            box-shadow: var(--shadow);
-        }
-        .rules-section h3 { color: var(--ifma-green); margin: 0 0 15px 0; font-size: 1.2rem; font-weight: 700; }
-        .rules-list { font-size: 0.95rem; line-height: 1.7; color: #444; }
-        .rules-list ul { list-style: none; padding: 0; margin: 0; }
-        .rules-list ul li { margin-bottom: 8px; }
-        .rules-list ul li:last-child { margin-bottom: 0; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-name { text-align: center; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; padding: 4px 0; }
+    .day-cell {
+        background: #f8fafc; min-height: 74px; max-height: 110px; overflow-y: auto; padding: 6px;
+        border-radius: 8px; font-size: 0.7rem; display: flex; flex-direction: column; gap: 4px;
+    }
+    .day-cell.empty { background: transparent; }
+    .day-cell.today { border: 2px solid var(--ifma-green-light); background: #fff; }
+    .day-number { font-weight: 800; color: #1a202c; font-size: 0.8rem; }
+    .day-cell.today .day-number { color: var(--ifma-green); }
 
-        .ampliador-tooltip {
-            position: fixed;
-            background: #1a202c;
-            color: #ffffff;
-            padding: 12px 18px;
-            border-radius: 8px;
-            font-size: 1rem; 
-            font-weight: 600;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            border-left: 5px solid var(--accent);
-            pointer-events: none; 
-            z-index: 2000;
-            display: none; 
-            max-width: 320px;
-            line-height: 1.4;
-            animation: fadeIn 0.15s ease-out;
-        }
-        .ampliador-tooltip b { color: var(--ifma-gold); }
+    .event-tag {
+        border: 2px solid var(--accent, var(--ifma-green-light)); border-radius: 5px; padding: 3px 5px;
+        font-size: 0.62rem; color: #1a2e22; cursor: zoom-in; background: #fff; line-height: 1.25;
+    }
+    .event-tag b { display: block; color: var(--ifma-green); font-size: 0.6rem; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        
-        footer { background: #1a202c; color: #a0aec0; text-align: center; padding: 15px; font-size: 0.8rem; margin-top: auto; }
+    .holiday-label { background: #fff5f5; color: #e53e3e; font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 4px; }
 
-        @media (max-width: 900px) {
-            .header { padding: 15px 20px; }
-            .calendar-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-            .day-name { display: none; }
-            .day-cell { min-height: 90px; max-height: 150px; padding: 8px; }
-            .day-cell.empty { display: none; }
-            .day-cell.today { transform: none; box-shadow: var(--shadow-md); }
-        }
+    .ampliador-tooltip {
+        position: fixed; background: #0F1F17; color: #fff; padding: 10px 16px; border-radius: 8px;
+        font-size: 0.9rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        border-left: 4px solid var(--ifma-green-light); pointer-events: none; z-index: 2000;
+        display: none; max-width: 300px; line-height: 1.4;
+    }
+    .ampliador-tooltip b { color: var(--ifma-gold) !important; }
 
-        @media (max-width: 650px) {
-            .header { grid-template-columns: 1fr; text-align: center; gap: 12px; }
-            .header-titles { text-align: center; }
-            .toolbar { flex-direction: column; align-items: stretch; }
-            .toolbar-group { justify-content: center; }
-            .calendar-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
+    .rules-section { background: var(--card-bg); padding: 20px 24px; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .rules-section h3 { color: var(--ifma-green); margin: 0 0 12px; font-size: 1rem; font-weight: 800; }
+    .rules-section ul { list-style: none; padding: 0; margin: 0; font-size: 0.88rem; color: #475569; line-height: 1.8; }
+
+    footer { text-align: center; padding: 24px; color: #94a3b8; font-size: 0.8rem; }
+
+    /* ===== EASTER EGG: MAMUTINHO ===== */
+    .mamute-easter-egg {
+        position: absolute;
+        font-size: 2.2rem;
+        z-index: 50;
+        cursor: pointer;
+        filter: drop-shadow(0 4px 8px rgba(0,166,81,0.4));
+        animation: mamute-pop 0.5s ease, mamute-float 2.5s ease-in-out infinite;
+        transition: transform 0.2s ease;
+        user-select: none;
+    }
+    .mamute-easter-egg:hover { transform: scale(1.3) rotate(-8deg); }
+
+    @keyframes mamute-pop {
+        0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+        60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes mamute-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+
+    .mamute-tooltip {
+        position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+        background: #071A0F; color: #00A651; font-size: 0.7rem; font-weight: 800;
+        padding: 5px 10px; border-radius: 6px; white-space: nowrap; opacity: 0;
+        pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .mamute-easter-egg:hover .mamute-tooltip { opacity: 1; }
+
+    @media (max-width: 1100px) {
+        .content-grid { grid-template-columns: 1fr; }
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 700px) {
+        .main { padding: 18px; }
+        .topbar { padding: 14px 18px; }
+        .kpi-grid { grid-template-columns: 1fr 1fr; }
+        .day-name { display: none; }
+        .calendar-grid { grid-template-columns: repeat(3, 1fr); }
+        .tabs-nav { width: 100%; }
+        .tab-btn { flex: 1; justify-content: center; }
+    }
+</style>
 </head>
 <body>
 
-<div class="header">
-    <div class="header-titles">
-        <h1>LabDeck - ZDC</h1>
-        <p>
-            <a href="https://zedoca.ifma.edu.br/" target="_blank">
-               Instituto Federal do Maranhão - Campus Zé Doca
-            </a>
-        </p>
+<div class="topbar">
+    <div>
+        <span class="logo">Lab<span>Deck</span></span>
+        <span class="logo-sub">IFMA · Zé Doca</span>
     </div>
-    <a href="login.html" class="btn-admin">Entrar</a>
+    <a href="login.html" class="btn-login-top">🔒 Fazer Login</a>
 </div>
 
-<div class="main-content">
+<div class="main">
 
-    <div class="toolbar">
-        <div class="toolbar-group">
-            <label for="selectLab">Laboratório</label>
+    <div class="topbar-page">
+        <div>
+            <h1>Painel de Ocupação</h1>
+            <p>Acompanhamento em tempo real dos laboratórios do campus</p>
+        </div>
+        <div class="filtros">
             <select id="selectLab" onchange="renderizar()">
                 <option value="todos">Todos os Laboratórios</option>
                 <option value="Laboratório de Informática I">Laboratório de Informática I</option>
                 <option value="Laboratório de Informática II">Laboratório de Informática II</option>
                 <option value="Laboratório de Alimentos">Laboratório de Alimentos</option>
                 <option value="Laboratório de Matemática">Laboratório de Matemática</option>
-                <option value="Laboratório de Química">Laboratório de Química</option>
+                <option value="Laboratório de Química I">Laboratório de Química I</option>
+                <option value="Laboratório de Química II">Laboratório de Química II</option>
                 <option value="Laboratório de Biocombustíveis">Laboratório de Biocombustíveis</option>
             </select>
         </div>
-
-        <div class="toolbar-group">
-            <button class="btn-nav" onclick="mudarMes(-1)">◀ Anterior</button>
-            <select id="selectMes" class="select-custom" onchange="selecaoManual()"></select>
-            <select id="selectAno" class="select-custom" onchange="selecaoManual()"></select>
-            <button class="btn-nav" onclick="mudarMes(1)">Próximo ▶</button>
-        </div>
     </div>
 
-    <div class="calendar-grid" id="calendar"></div>
-    
-    <div class="rules-section">
-        <h3>Regras para Agendamento</h3>
-        <div class="rules-list">
+    <!-- ===== TABS ===== -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" id="btnTabCalendario" onclick="mudarAba('calendario')">📅 Calendário</button>
+        <button class="tab-btn" id="btnTabEstatisticas" onclick="mudarAba('estatisticas')">📊 Estatísticas</button>
+    </div>
+
+    <!-- ===== ABA CALENDÁRIO ===== -->
+    <div class="tab-content active" id="tabCalendario">
+        <div class="calendar-card" style="margin-bottom: 22px;">
+            <div class="cal-header">
+                <h3 id="tituloMesCal"></h3>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-nav" onclick="mudarMes(-1)">◀</button>
+                    <button class="btn-nav" onclick="mudarMes(1)">▶</button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendar"></div>
+        </div>
+
+        <div class="rules-section">
+            <h3>Regras para Agendamento</h3>
             <ul>
-                <li>• A reserva deve ser feita com antecedência mínima de 24 horas antes do horário desejado.</li>
-                <li>• Horário de funcionamento: 08H às 12H e 14H às 17H.</li>
-                <li>• Solicitação via e-mail para o setor responsável pelo laboratório desejado.</li>
-                <li>• Dados necessários: Nome, vínculo, laboratório, data, horário de início/fim, nº de participantes e finalidade.</li>
+                <li>• Reserva com antecedência mínima de 24 horas.</li>
+                <li>• Funcionamento: 08h às 12h e 14h às 17h.</li>
+                <li>• Solicitação via e-mail ao setor responsável pelo laboratório.</li>
+                <li>• Dados necessários: nome, vínculo, laboratório, data, horário e finalidade.</li>
                 <li>• Cancelamentos devem ser comunicados o mais breve possível.</li>
             </ul>
         </div>
     </div>
+
+    <!-- ===== ABA ESTATÍSTICAS ===== -->
+    <div class="tab-content" id="tabEstatisticas">
+        <div id="mamuteContainer" style="position: relative;"></div>
+
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div class="content-grid">
+            <div class="chart-card">
+                <h3>Agendamentos por Laboratório</h3>
+                <div class="chart-wrap"><canvas id="chartLabs"></canvas></div>
+            </div>
+            <div class="side-charts">
+                <div class="chart-card">
+                    <h3>Ocupação do Mês</h3>
+                    <div class="chart-wrap" style="height:160px;"><canvas id="chartOcupacao"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<div id="ampliador" class="ampliador-tooltip"></div>
+<footer>Desenvolvido por Grupo MAAMUTE. © Copyright 2026, All Rights Reserved.</footer>
 
-<footer>
-    Desenvolvido por Grupo MAAMUTE. © Copyright 2026, All Rights Reserved.
-</footer>
+<div id="ampliador" class="ampliador-tooltip"></div>
 
 <script>
     const firebaseConfig = {
@@ -387,135 +267,198 @@
         projectId: "labdeck-zdc",
         storageBucket: "labdeck-zdc.firebasestorage.app",
         messagingSenderId: "1024127557935",
-        appId: "1:1024127557935:web:a9e5ac09adba5caded41da",
-        measurementId: "G-L78JK2K7S6"
+        appId: "1:1024127557935:web:a9e5ac09adba5caded41da"
     };
     firebase.initializeApp(firebaseConfig);
-    if (firebase.analytics) firebase.analytics();
     const database = firebase.database();
 
+    const coresLabs = {
+        "Laboratório de Informática I": "#00A651",
+        "Laboratório de Informática II": "#3B82F6",
+        "Laboratório de Alimentos": "#F59E0B",
+        "Laboratório de Matemática": "#8B5CF6",
+        "Laboratório de Química I": "#EF4444",
+        "Laboratório de Química II": "#EC4899",
+        "Laboratório de Biocombustíveis": "#22C55E"
+    };
+    function corDoLab(lab) { return coresLabs[lab] || "#94A3B8"; }
+
     const ampliador = document.getElementById('ampliador');
-
-    function ativarAmpliador(elemento) {
-        ampliador.innerHTML = elemento.innerHTML;
-        ampliador.style.display = 'block';
+    function ativarAmpliador(el) { ampliador.innerHTML = el.innerHTML; ampliador.style.display = 'block'; }
+    function moverAmpliador(e) {
+        let x = e.clientX + 15, y = e.clientY + 15;
+        if (x + ampliador.offsetWidth > window.innerWidth) x = e.clientX - ampliador.offsetWidth - 15;
+        if (y + ampliador.offsetHeight > window.innerHeight) y = e.clientY - ampliador.offsetHeight - 15;
+        ampliador.style.left = x + 'px'; ampliador.style.top = y + 'px';
     }
-
-    function moverAmpliador(event) {
-        const offsetX = 15;
-        const offsetY = 15;
-        let x = event.clientX + offsetX;
-        let y = event.clientY + offsetY;
-
-        if (x + ampliador.offsetWidth > window.innerWidth) x = event.clientX - ampliador.offsetWidth - offsetX;
-        if (y + ampliador.offsetHeight > window.innerHeight) y = event.clientY - ampliador.offsetHeight - offsetY;
-
-        ampliador.style.left = `${x}px`;
-        ampliador.style.top = `${y}px`;
-    }
-
     function desativarAmpliador() { ampliador.style.display = 'none'; }
 
-    // Helper para exibir intervalo de horário (compatível com dados antigos "time")
     function formatarHorario(a) {
         if (a.timeStart && a.timeEnd) return `${a.timeStart} - ${a.timeEnd}`;
-        if (a.timeStart) return a.timeStart;
-        return a.time || '';
+        return a.timeStart || a.time || '';
     }
 
     function obterFeriadosFixos(ano) {
         return {
-            [`${ano}-01-01`]: "Confraternização Universal",
-            [`${ano}-04-21`]: "Tiradentes",
-            [`${ano}-05-01`]: "Dia do Trabalhador",
-            [`${ano}-07-28`]: "Adesão do Maranhão",
-            [`${ano}-09-07`]: "Independência do Brasil",
-            [`${ano}-10-12`]: "Nossa Senhora Aparecida",
-            [`${ano}-11-02`]: "Finados",
-            [`${ano}-11-15`]: "Proclamação da República",
-            [`${ano}-11-20`]: "Dia de Zumbi e da Consciência Negra",
-            [`${ano}-12-25`]: "Natal"
+            [`${ano}-01-01`]: "Confraternização", [`${ano}-04-21`]: "Tiradentes",
+            [`${ano}-05-01`]: "Trabalhador", [`${ano}-07-28`]: "Adesão MA",
+            [`${ano}-09-07`]: "Independência", [`${ano}-10-12`]: "N. Sra Aparecida",
+            [`${ano}-11-02`]: "Finados", [`${ano}-11-15`]: "Proclamação",
+            [`${ano}-11-20`]: "Consciência Negra", [`${ano}-12-25`]: "Natal"
         };
     }
 
-    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
     let hoje = new Date();
     let mesExibido = hoje.getMonth();
     let anoExibido = hoje.getFullYear();
+    let chartLabs, chartOcupacao;
 
-    function inicializarSeletores() {
-        const selectMes = document.getElementById('selectMes');
-        const selectAno = document.getElementById('selectAno');
-        
-        selectMes.innerHTML = '';
-        meses.forEach((mes, idx) => { selectMes.innerHTML += `<option value="${idx}">${mes}</option>`; });
+    /* ===== EASTER EGG: MAMUTINHO ===== */
+    const mensagensMamute = [
+        "Você me encontrou! 🦣",
+        "Grupo MAAMUTE por aqui!",
+        "Rawwwr, é o mamutinho!",
+        "Ele estava escondido aqui!",
+        "Easter egg desbloqueado!"
+    ];
 
-        selectAno.innerHTML = '';
-        for (let a = hoje.getFullYear() - 5; a <= hoje.getFullYear() + 10; a++) {
-            selectAno.innerHTML += `<option value="${a}">${a}</option>`;
+    function mostrarMamute() {
+        const container = document.getElementById('mamuteContainer');
+        if (!container) return;
+
+        const antigo = container.querySelector('.mamute-easter-egg');
+        if (antigo) antigo.remove();
+
+        const mamute = document.createElement('div');
+        mamute.className = 'mamute-easter-egg';
+        mamute.innerText = '🦣';
+        mamute.style.color = '#00A651';
+
+        const top = Math.floor(Math.random() * 60) + 5;
+        const left = Math.floor(Math.random() * 85) + 2;
+        mamute.style.top = top + '%';
+        mamute.style.left = left + '%';
+
+        const msg = mensagensMamute[Math.floor(Math.random() * mensagensMamute.length)];
+        const tooltip = document.createElement('span');
+        tooltip.className = 'mamute-tooltip';
+        tooltip.innerText = msg;
+        mamute.appendChild(tooltip);
+
+        mamute.onclick = () => {
+            mamute.style.transform = 'scale(0) rotate(360deg)';
+            mamute.style.transition = 'all 0.4s ease';
+            setTimeout(() => mamute.remove(), 400);
+        };
+
+        container.appendChild(mamute);
+    }
+
+    function mudarAba(aba) {
+        document.getElementById('tabCalendario').classList.remove('active');
+        document.getElementById('tabEstatisticas').classList.remove('active');
+        document.getElementById('btnTabCalendario').classList.remove('active');
+        document.getElementById('btnTabEstatisticas').classList.remove('active');
+
+        if (aba === 'calendario') {
+            document.getElementById('tabCalendario').classList.add('active');
+            document.getElementById('btnTabCalendario').classList.add('active');
+        } else {
+            document.getElementById('tabEstatisticas').classList.add('active');
+            document.getElementById('btnTabEstatisticas').classList.add('active');
+            setTimeout(() => { if (chartLabs) chartLabs.resize(); if (chartOcupacao) chartOcupacao.resize(); }, 50);
+            mostrarMamute();
         }
     }
 
-    function atualizarValoresSeletores() {
-        document.getElementById('selectMes').value = mesExibido;
-        document.getElementById('selectAno').value = anoExibido;
+    function renderizarKPIs(appointments, todosDoMes) {
+        const totalMes = todosDoMes.length;
+        const labsAtivos = new Set(todosDoMes.map(a => a.lab)).size;
+        const diasComAgendamento = new Set(todosDoMes.map(a => a.date)).size;
+        const diasUteis = 22;
+        const ocupacao = Math.min(100, Math.round((diasComAgendamento / diasUteis) * 100));
+        const feriadosCount = Object.keys(obterFeriadosFixos(anoExibido)).filter(d => d.startsWith(`${anoExibido}-${String(mesExibido+1).padStart(2,'0')}`)).length;
+
+        document.getElementById('kpiGrid').innerHTML = `
+            <div class="kpi-card"><span class="label">Agendamentos no Mês</span><b class="value">${totalMes}</b></div>
+            <div class="kpi-card"><span class="label">Laboratórios Ativos</span><b class="value">${labsAtivos}/7</b></div>
+            <div class="kpi-card"><span class="label">Taxa de Ocupação</span><b class="value">${ocupacao}%</b></div>
+            <div class="kpi-card"><span class="label">Feriados no Mês</span><b class="value">${feriadosCount}</b></div>
+        `;
     }
 
-    function selecaoManual() {
-        mesExibido = parseInt(document.getElementById('selectMes').value);
-        anoExibido = parseInt(document.getElementById('selectAno').value);
-        renderizar();
+    function renderizarGraficos(todosDoMes) {
+        const contagemPorLab = {};
+        Object.keys(coresLabs).forEach(l => contagemPorLab[l] = 0);
+        todosDoMes.forEach(a => { if (a.lab) contagemPorLab[a.lab] = (contagemPorLab[a.lab] || 0) + 1; });
+
+        const labels = Object.keys(contagemPorLab).map(l => l.replace("Laboratório de ", ""));
+        const valores = Object.values(contagemPorLab);
+        const cores = Object.keys(contagemPorLab).map(l => corDoLab(l));
+
+        if (chartLabs) chartLabs.destroy();
+        chartLabs = new Chart(document.getElementById('chartLabs'), {
+            type: 'bar',
+            data: { labels, datasets: [{ data: valores, backgroundColor: cores, borderRadius: 6 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { font: { size: 10 } } } }
+            }
+        });
+
+        const diasComAgendamento = new Set(todosDoMes.map(a => a.date)).size;
+        const diasUteis = 22;
+        const livre = Math.max(0, diasUteis - diasComAgendamento);
+
+        if (chartOcupacao) chartOcupacao.destroy();
+        chartOcupacao = new Chart(document.getElementById('chartOcupacao'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Ocupados', 'Livres'],
+                datasets: [{ data: [diasComAgendamento, livre], backgroundColor: ['#00A651', '#E2E8F0'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }, cutout: '70%' }
+        });
     }
 
     function renderizar() {
-        atualizarValoresSeletores();
-        desativarAmpliador();
-
         const labFiltro = document.getElementById('selectLab').value;
 
         database.ref('agendamentos').on('value', (snapshot) => {
             const data = snapshot.val();
-            let appointments = data ? Object.values(data) : [];
+            let todos = data ? Object.values(data) : [];
+            const todosDoMes = todos.filter(a => a.date && a.date.startsWith(`${anoExibido}-${String(mesExibido+1).padStart(2,'0')}`));
 
-            if (labFiltro !== 'todos') {
-                appointments = appointments.filter(a => a.lab === labFiltro);
-            }
+            let appointments = labFiltro !== 'todos' ? todos.filter(a => a.lab === labFiltro) : todos;
+
+            renderizarKPIs(appointments, todosDoMes);
+            renderizarGraficos(todosDoMes);
+
+            document.getElementById('tituloMesCal').innerText = `${meses[mesExibido]} ${anoExibido}`;
 
             const grid = document.getElementById('calendar');
             const feriadosAtuais = obterFeriadosFixos(anoExibido);
-
             grid.innerHTML = `<div class="day-name">Dom</div><div class="day-name">Seg</div><div class="day-name">Ter</div><div class="day-name">Qua</div><div class="day-name">Qui</div><div class="day-name">Sex</div><div class="day-name">Sáb</div>`;
 
             const firstDay = new Date(anoExibido, mesExibido, 1).getDay();
             const daysInMonth = new Date(anoExibido, mesExibido + 1, 0).getDate();
-
-            const dataAtualSistema = new Date();
-            const diaHoje = dataAtualSistema.getDate();
-            const mesHoje = dataAtualSistema.getMonth();
-            const anoHoje = dataAtualSistema.getFullYear();
+            const now = new Date();
 
             for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="day-cell empty"></div>`;
 
             for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${anoExibido}-${String(mesExibido+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
-                const ehHoje = (day === diaHoje && mesExibido === mesHoje && anoExibido === anoHoje);
-                const classeCell = ehHoje ? "day-cell today" : "day-cell";
-
-                let html = `<div class="${classeCell}"><span class="day-number">${day}</span>`;
-                
+                const dateStr = `${anoExibido}-${String(mesExibido+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const ehHoje = day === now.getDate() && mesExibido === now.getMonth() && anoExibido === now.getFullYear();
+                let html = `<div class="day-cell ${ehHoje ? 'today' : ''}"><span class="day-number">${day}</span>`;
                 if (feriadosAtuais[dateStr]) html += `<span class="holiday-label">${feriadosAtuais[dateStr]}</span>`;
-                
+
                 appointments.filter(a => a.date === dateStr).forEach(a => {
-                    html += `<div class="event-tag" 
-                                  onmouseenter="ativarAmpliador(this)" 
-                                  onmousemove="moverAmpliador(event)" 
-                                  onmouseleave="desativarAmpliador()"
-                                  ontouchstart="ativarAmpliador(this); moverAmpliador(event.touches[0]); event.stopPropagation();">
-                                  <b>${formatarHorario(a)}</b>
-                                  ${a.lab ? `<span class="event-lab-tag">${a.lab}</span>` : ''}
-                                  <span class="event-title">${a.name}</span>
-                             </div>`;
+                    const cor = corDoLab(a.lab);
+                    html += `<div class="event-tag" style="border-color:${cor};"
+                        onmouseenter="ativarAmpliador(this)" onmousemove="moverAmpliador(event)" onmouseleave="desativarAmpliador()">
+                        <b>${formatarHorario(a)}</b>${a.name}</div>`;
                 });
                 grid.innerHTML += html + `</div>`;
             }
@@ -529,9 +472,6 @@
         renderizar();
     }
 
-    document.addEventListener('touchstart', desativarAmpliador);
-
-    inicializarSeletores();
     renderizar();
 </script>
 </body>

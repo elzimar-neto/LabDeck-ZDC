@@ -1,318 +1,191 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LabDeck - ZDC | Painel ADM</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
-        :root {
-            --ifma-green: #006633;
-            --ifma-green-dark: #004d26;
-            --ifma-gold: #D4B277;
-            --bg-white: #F4ECE0;
-            --accent: #0AB0AB;
-            --text-main: #2d3748;
-            --radius: 10px;
-            --shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -1px rgba(0,0,0,0.03);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabDeck - ZDC | Painel Admin</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<style>
+    :root {
+        --ifma-green: #006633; --ifma-green-dark: #004d26; --ifma-green-light: #00A651;
+        --ifma-gold: #D4B277; --sidebar-bg: #071A0F; --sidebar-bg2: #0D2818;
+        --bg-app: #F1F5F1; --card-bg: #fff; --text-main: #1A2E22; --radius: 14px;
+        --shadow: 0 4px 14px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--bg-app); color: var(--text-main); display: flex; min-height: 100vh; }
 
-        * { box-sizing: border-box; }
+    .sidebar {
+        width: 240px; background: linear-gradient(180deg, var(--sidebar-bg2), var(--sidebar-bg));
+        color: #fff; display: flex; flex-direction: column; padding: 24px 18px; flex-shrink: 0;
+        position: sticky; top: 0; height: 100vh;
+    }
+    .sidebar .logo { font-weight: 900; font-size: 1.15rem; margin-bottom: 6px; padding: 0 8px; }
+    .sidebar .logo span { color: var(--ifma-green-light); }
+    .sidebar .logo-sub { font-size: 0.7rem; color: rgba(255,255,255,0.4); padding: 0 8px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .nav-item {
+        display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px;
+        color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        margin-bottom: 4px; transition: all 0.2s ease; border: none; background: none; width: 100%; text-align: left; cursor: pointer; font-family: inherit;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .nav-item.active { background: rgba(0,166,81,0.15); color: var(--ifma-green-light); }
+    .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .sidebar-footer { margin-top: auto; font-size: 0.7rem; color: rgba(255,255,255,0.3); padding: 0 8px; }
 
-        body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-            background: var(--bg-white);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            color: var(--text-main);
-        }
+    .main { flex: 1; padding: 28px 34px; overflow-x: hidden; }
+    .topbar-page { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .topbar-page h1 { font-size: 1.5rem; font-weight: 800; margin: 0; }
+    .topbar-page p { margin: 2px 0 0; color: #64748b; font-size: 0.85rem; }
 
-        .header-adm {
-            background: var(--ifma-green);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .filtros select {
+        font-family: inherit; font-weight: 700; font-size: 0.85rem; color: var(--ifma-green);
+        background: var(--card-bg); border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer;
+        box-shadow: var(--shadow);
+    }
 
-        .toolbar {
-            background: white;
-            padding: 14px 18px;
-            border-radius: 0 0 8px 8px;
-            margin-bottom: 10px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            box-shadow: var(--shadow);
-        }
-        .toolbar label { font-weight: 700; color: var(--ifma-green); font-size: 0.9rem; }
-        .toolbar select {
-            font-size: 0.95rem; font-weight: 700; color: var(--ifma-green);
-            border: none; background: #f1f5f9; border-radius: 8px; padding: 8px 14px; cursor: pointer;
-        }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+    .kpi-card {
+        background: var(--card-bg); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+        display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--ifma-green-light);
+    }
+    .kpi-card span.label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
+    .kpi-card b.value { font-size: 1.7rem; font-weight: 900; color: var(--text-main); }
 
-        .nav-controls {
-            display: flex; gap: 15px; align-items: center; background: white;
-            padding: 12px; border-radius: 8px; justify-content: center;
-            margin-bottom: 10px; box-shadow: var(--shadow);
-        }
-        .nav-controls button {
-            background: #f1f5f9; border: none; color: var(--ifma-green);
-            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 700;
-            transition: all 0.2s ease;
-        }
-        .nav-controls button:hover { background: var(--ifma-green); color: white; }
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 22px; align-items: start; }
+    .chart-card { background: var(--card-bg); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+    .chart-card h3 { margin: 0 0 14px; font-size: 0.95rem; font-weight: 800; }
+    .chart-wrap { position: relative; height: 220px; }
+    .side-charts { display: flex; flex-direction: column; gap: 18px; }
 
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--ifma-gold); border: 2px solid var(--ifma-gold); border-radius: 8px; overflow: hidden; }
-        .day-name { background: var(--ifma-green-dark); color: white; padding: 10px; text-align: center; font-size: 0.8rem; font-weight: bold; }
-        .day-cell { background: white; min-height: 150px; padding: 8px; position: relative; border: 1px solid #f0f0f0; }
-        .day-number { font-weight: bold; color: var(--ifma-green); font-size: 1.1rem; }
+    .calendar-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .cal-header h3 { margin: 0; font-size: 1rem; font-weight: 800; }
+    .btn-nav { background: #f1f5f9; color: var(--ifma-green); border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem; }
+    .btn-nav:hover { background: var(--ifma-green); color: white; }
 
-        .btn-add {
-            background: var(--accent); color: white; border: none; border-radius: 50%;
-            width: 26px; height: 26px; cursor: pointer; float: right; font-weight: bold;
-            font-size: 1rem; line-height: 1; transition: transform 0.15s ease;
-        }
-        .btn-add:hover { transform: scale(1.15); }
-        .btn-add:disabled { background: #a0aec0; cursor: not-allowed; transform: none; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-name { text-align: center; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; padding: 4px 0; }
+    .day-cell { background: #f8fafc; min-height: 110px; padding: 6px; border-radius: 8px; position: relative; }
+    .day-number { font-weight: 800; color: #1a202c; font-size: 0.8rem; }
 
-        .event-item {
-            background: #fff; border: 1px solid #ddd; border-left: 5px solid var(--ifma-gold);
-            padding: 6px 8px; margin-bottom: 5px; border-radius: 4px; cursor: grab;
-            font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center;
-        }
-        .event-lab { display: block; font-size: 0.65rem; color: var(--ifma-green); font-weight: 700; text-transform: uppercase; }
-        .event-item button { background: none; border: none; cursor: pointer; font-size: 0.85rem; padding: 2px; }
+    .btn-add {
+        background: var(--ifma-green-light); color: white; border: none; border-radius: 50%;
+        width: 22px; height: 22px; cursor: pointer; float: right; font-weight: bold; font-size: 0.9rem; line-height: 1;
+    }
+    .btn-add:disabled { background: #cbd5e0; cursor: not-allowed; }
 
-        .btn-logout { background: transparent; border: 1px solid white; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    .event-item {
+        background: #fff; border: 2px solid #ddd; padding: 5px 7px; margin-bottom: 4px; border-radius: 5px;
+        cursor: grab; font-size: 0.68rem; color: #1a2e22;
+    }
+    .event-lab { display: block; font-size: 0.58rem; color: var(--ifma-green); font-weight: 700; text-transform: uppercase; }
 
-        footer { background: #1a202c; color: white; text-align: center; padding: 15px; font-size: 0.85rem; margin-top: auto; }
+    .acesso-negado-banner {
+        background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 16px;
+        border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; margin-bottom: 14px; display: none;
+    }
 
-        /* ===== MODAL DE CADASTRO ===== */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 20, 15, 0.55);
-            backdrop-filter: blur(3px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .modal-overlay.active { display: flex; }
+    /* Modal (mesmo padrão anterior) */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(7,26,15,0.6); backdrop-filter: blur(3px); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: #fff; width: 100%; max-width: 460px; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.35); max-height: 92vh; overflow-y: auto; }
+    .modal-header { background: linear-gradient(135deg, var(--ifma-green-light), var(--ifma-green-dark)); padding: 20px 24px; position: relative; }
+    .modal-header h3 { color: white; margin: 0; font-size: 1.1rem; font-weight: 800; }
+    .modal-header span { display: block; color: rgba(255,255,255,0.75); font-size: 0.8rem; margin-top: 4px; }
+    .modal-close { position: absolute; top: 16px; right: 18px; background: rgba(255,255,255,0.15); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+    .modal-body { padding: 24px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--ifma-green); text-transform: uppercase; margin-bottom: 6px; }
+    .form-group input, .form-group select { width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; font-family: inherit; background: #f8fafc; outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--ifma-green-light); background: #fff; }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+    .form-note { background: #f0fdf4; border: 1px solid rgba(0,166,81,0.3); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #14532d; }
+    .modal-footer { padding: 16px 24px 24px; display: flex; gap: 10px; }
+    .btn-modal { flex: 1; padding: 13px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: none; }
+    .btn-cancel { background: #f1f5f9; color: #64748b; }
+    .btn-save { background: var(--ifma-green); color: white; }
+    .btn-delete-modal { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .field-error { color: #dc2626; font-size: 0.75rem; font-weight: 600; margin-top: 4px; display: none; }
+    .form-group.invalid input, .form-group.invalid select { border-color: #dc2626; }
+    .form-group.invalid .field-error { display: block; }
 
-        .modal-box {
-            background: #ffffff;
-            width: 100%;
-            max-width: 460px;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.35);
-            animation: modalIn 0.25s ease-out;
-            max-height: 92vh;
-            overflow-y: auto;
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: translateY(-14px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, var(--ifma-green), var(--ifma-green-dark));
-            padding: 20px 24px;
-            position: relative;
-        }
-        .modal-header h3 {
-            color: white;
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 800;
-            letter-spacing: 0.2px;
-        }
-        .modal-header span {
-            display: block;
-            color: rgba(255,255,255,0.75);
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-top: 4px;
-        }
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 18px;
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1rem;
-            line-height: 1;
-            transition: background 0.2s ease;
-        }
-        .modal-close:hover { background: rgba(255,255,255,0.3); }
-
-        .modal-body { padding: 24px; }
-
-        .form-group { margin-bottom: 18px; }
-        .form-group:last-child { margin-bottom: 0; }
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--ifma-green);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            margin-bottom: 6px;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 11px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            color: var(--text-main);
-            background: #f8fafc;
-            transition: all 0.2s ease;
-            outline: none;
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            border-color: var(--ifma-green);
-            background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(0, 102, 51, 0.1);
-        }
-        .form-row { display: flex; gap: 12px; }
-        .form-row .form-group { flex: 1; }
-
-        .form-note {
-            background: #f0fdfa;
-            border: 1px solid rgba(10, 176, 171, 0.3);
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-size: 0.78rem;
-            color: #0f5f5c;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .modal-footer {
-            padding: 16px 24px 24px;
-            display: flex;
-            gap: 10px;
-        }
-        .btn-modal {
-            flex: 1;
-            padding: 13px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-        .btn-cancel { background: #f1f5f9; color: #64748b; }
-        .btn-cancel:hover { background: #e2e8f0; }
-        .btn-save { background: var(--ifma-green); color: white; box-shadow: 0 4px 10px rgba(0,102,51,0.25); }
-        .btn-save:hover { background: var(--ifma-green-dark); }
-        .btn-save:disabled { background: #a0aec0; cursor: not-allowed; box-shadow: none; }
-
-        .btn-delete-modal {
-            background: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-        }
-        .btn-delete-modal:hover { background: #fee2e2; }
-
-        .field-error {
-            color: #dc2626;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 4px;
-            display: none;
-        }
-        .form-group.invalid input, .form-group.invalid select { border-color: #dc2626; }
-        .form-group.invalid .field-error { display: block; }
-
-        .acesso-negado-banner {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #dc2626;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 10px;
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .calendar-grid { grid-template-columns: 1fr; }
-            .day-name { display: none; }
-            .form-row { flex-direction: column; gap: 0; }
-        }
-    </style>
+    @media (max-width: 1100px) { .content-grid { grid-template-columns: 1fr; } .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 700px) { .sidebar { display:none; } .main { padding: 18px; } .day-name { display:none; } .calendar-grid { grid-template-columns: repeat(3,1fr); } .form-row { flex-direction: column; } }
+</style>
 </head>
 <body>
 
-<div class="header-adm" id="headerAdmin" style="display:none;">
-    <div>
-        <small>IFMA - Campus Zé Doca</small>
-        <div style="font-size: 1.1rem; font-weight: bold;">LabDeck - ZDC</div>
+<div class="sidebar">
+    <div class="logo">Lab<span>Deck</span></div>
+    <div class="logo-sub">Painel Admin</div>
+
+    <button class="nav-item active"><span class="dot"></span> Dashboard</button>
+    <a href="calendario.html" class="nav-item"><span class="dot"></span> Ver Calendário Público</a>
+    <button class="nav-item" onclick="fazerLogout()"><span class="dot"></span> Sair</button>
+
+    <div class="sidebar-footer">© 2026 Grupo MAAMUTE</div>
+</div>
+
+<div class="main" id="mainArea" style="display:none;">
+
+    <div class="topbar-page">
+        <div>
+            <h1>Gestão de Agendamentos</h1>
+            <p>Painel administrativo · edição por laboratório</p>
+        </div>
+        <div class="filtros">
+            <select id="selectLabAdm" onchange="renderizar()">
+                <option value="Laboratório de Informática I">Laboratório de Informática I</option>
+                <option value="Laboratório de Informática II">Laboratório de Informática II</option>
+                <option value="Laboratório de Alimentos">Laboratório de Alimentos</option>
+                <option value="Laboratório de Matemática">Laboratório de Matemática</option>
+                <option value="Laboratório de Química I">Laboratório de Química I</option>
+                <option value="Laboratório de Química II">Laboratório de Química II</option>
+                <option value="Laboratório de Biocombustíveis">Laboratório de Biocombustíveis</option>
+                <option value="todos">Ver todos os laboratórios</option>
+            </select>
+        </div>
     </div>
-    <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+
+    <div id="avisoAcesso" class="acesso-negado-banner"></div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="content-grid">
+        <div class="chart-card">
+            <h3>Agendamentos por Laboratório</h3>
+            <div class="chart-wrap"><canvas id="chartLabs"></canvas></div>
+        </div>
+        <div class="side-charts">
+            <div class="chart-card">
+                <h3>Ocupação do Mês</h3>
+                <div class="chart-wrap" style="height:160px;"><canvas id="chartOcupacao"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="calendar-card">
+        <div class="cal-header">
+            <h3 id="tituloMes"></h3>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-nav" onclick="mudarMes(-1)">◀</button>
+                <button class="btn-nav" onclick="mudarMes(1)">▶</button>
+            </div>
+        </div>
+        <div class="calendar-grid" id="calendar"></div>
+    </div>
 </div>
 
-<div class="toolbar" id="labSelectBar" style="display:none;">
-    <label for="selectLabAdm">Laboratório em edição:</label>
-    <select id="selectLabAdm" onchange="renderizar()">
-        <option value="Laboratório de Informática I">Laboratório de Informática I</option>
-        <option value="Laboratório de Informática II">Laboratório de Informática II</option>
-        <option value="Laboratório de Alimentos">Laboratório de Alimentos</option>
-        <option value="Laboratório de Matemática">Laboratório de Matemática</option>
-        <option value="Laboratório de Química I">Laboratório de Química I</option>
-        <option value="Laboratório de Química II">Laboratório de Química II</option>
-        <option value="Laboratório de Biocombustíveis">Laboratório de Biocombustíveis</option>
-        <option value="todos">Ver todos os laboratórios</option>
-    </select>
-</div>
+<div id="loading" style="text-align:center; padding:60px; color:#006633; font-weight:800;">Verificando credenciais...</div>
 
-<div id="avisoAcesso" class="acesso-negado-banner"></div>
-
-<div class="nav-controls" id="navControls" style="display:none;">
-    <button onclick="mudarMes(-1)">◀</button>
-    <h2 id="tituloMes" style="margin:0; min-width: 200px; text-align: center; color: var(--ifma-green);"></h2>
-    <button onclick="mudarMes(1)">▶</button>
-</div>
-
-<div class="calendar-grid" id="calendar" style="display:none;"></div>
-
-<footer id="footerApp" style="display:none;">
-    Desenvolvido por Grupo MAAMUTE. © Copyright 2026, All Rights Reserved.
-</footer>
-
-<div id="loading" style="text-align:center; padding:50px; color:var(--ifma-green); font-weight:bold;">
-    Verificando credenciais...
-</div>
-
-<!-- ===== MODAL DE CADASTRO/EDIÇÃO ===== -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
         <div class="modal-header">
@@ -320,10 +193,9 @@
             <span id="modalSubtitulo">Preencha os dados da reserva</span>
             <button class="modal-close" onclick="fecharModal()">✕</button>
         </div>
-
         <div class="modal-body">
             <div class="form-group" id="grpLab">
-                <label for="inputLab">Laboratório</label>
+                <label>Laboratório</label>
                 <select id="inputLab">
                     <option value="Laboratório de Informática I">Laboratório de Informática I</option>
                     <option value="Laboratório de Informática II">Laboratório de Informática II</option>
@@ -335,37 +207,30 @@
                 </select>
                 <div class="field-error">Selecione o laboratório.</div>
             </div>
-
             <div class="form-group" id="grpData">
-                <label for="inputData">Data</label>
+                <label>Data</label>
                 <input type="date" id="inputData">
                 <div class="field-error">Informe a data.</div>
             </div>
-
             <div class="form-row">
                 <div class="form-group" id="grpHoraInicio">
-                    <label for="inputHoraInicio">Hora Inicial</label>
+                    <label>Hora Inicial</label>
                     <input type="time" id="inputHoraInicio">
                     <div class="field-error">Informe a hora inicial.</div>
                 </div>
                 <div class="form-group" id="grpHoraFim">
-                    <label for="inputHoraFim">Hora Final</label>
+                    <label>Hora Final</label>
                     <input type="time" id="inputHoraFim">
-                    <div class="field-error">A hora final deve ser maior que a inicial.</div>
+                    <div class="field-error">A hora final deve ser maior.</div>
                 </div>
             </div>
-
             <div class="form-group" id="grpNome">
-                <label for="inputNome">Nome / Responsável</label>
+                <label>Nome / Responsável</label>
                 <input type="text" id="inputNome" placeholder="Ex: João Silva - Turma 2ºA">
                 <div class="field-error">Informe o nome do responsável.</div>
             </div>
-
-            <div class="form-note">
-                ℹ️ Horário de funcionamento: 08h às 12h e 14h às 17h.
-            </div>
+            <div class="form-note">ℹ️ Horário de funcionamento: 08h às 12h e 14h às 17h.</div>
         </div>
-
         <div class="modal-footer">
             <button class="btn-modal btn-delete-modal" id="btnExcluirModal" onclick="excluirDoModal()" style="display:none;">Excluir</button>
             <button class="btn-modal btn-cancel" onclick="fecharModal()">Cancelar</button>
@@ -381,33 +246,32 @@
         projectId: "labdeck-zdc",
         storageBucket: "labdeck-zdc.firebasestorage.app",
         messagingSenderId: "1024127557935",
-        appId: "1:1024127557935:web:a9e5ac09adba5caded41da",
-        measurementId: "G-L78JK2K7S6"
+        appId: "1:1024127557935:web:a9e5ac09adba5caded41da"
     };
     firebase.initializeApp(firebaseConfig);
-    if (firebase.analytics) firebase.analytics();
     const database = firebase.database();
     const auth = firebase.auth();
 
+    const coresLabs = {
+        "Laboratório de Informática I": "#00A651", "Laboratório de Informática II": "#3B82F6",
+        "Laboratório de Alimentos": "#F59E0B", "Laboratório de Matemática": "#8B5CF6",
+        "Laboratório de Química I": "#EF4444", "Laboratório de Química II": "#EC4899",
+        "Laboratório de Biocombustíveis": "#22C55E"
+    };
+    function corDoLab(lab) { return coresLabs[lab] || "#94A3B8"; }
+
     let emailUsuarioAtual = null;
-    let mapaEditores = {}; // { "Laboratório X": "email@..." }
+    let mapaEditores = {};
 
     auth.onAuthStateChanged((user) => {
         if (user) {
             emailUsuarioAtual = user.email;
-            document.getElementById('headerAdmin').style.display = 'flex';
-            document.getElementById('labSelectBar').style.display = 'flex';
-            document.getElementById('navControls').style.display = 'flex';
-            document.getElementById('calendar').style.display = 'grid';
-            document.getElementById('footerApp').style.display = 'block';
+            document.getElementById('mainArea').style.display = 'block';
             document.getElementById('loading').style.display = 'none';
 
-            // Carrega o mapa de editores permitidos por laboratório
             database.ref('labs').once('value').then((snap) => {
                 const data = snap.val() || {};
-                Object.keys(data).forEach(lab => {
-                    mapaEditores[lab] = data[lab].editorEmail || null;
-                });
+                Object.keys(data).forEach(lab => { mapaEditores[lab] = data[lab].editorEmail || null; });
                 renderizar();
             });
         } else {
@@ -415,7 +279,6 @@
         }
     });
 
-    // Verifica se o usuário logado pode editar o laboratório informado
     function podeEditarLab(lab) {
         if (!lab || !emailUsuarioAtual) return false;
         const emailPermitido = mapaEditores[lab];
@@ -424,23 +287,63 @@
 
     function mostrarAvisoAcesso(msg) {
         const el = document.getElementById('avisoAcesso');
-        el.innerText = msg;
-        el.style.display = 'block';
+        el.innerText = msg; el.style.display = 'block';
         setTimeout(() => { el.style.display = 'none'; }, 4000);
     }
 
-    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
     let hoje = new Date();
     let mesExibido = hoje.getMonth();
     let anoExibido = hoje.getFullYear();
     let appointments = [];
     let editandoId = null;
+    let chartLabs, chartOcupacao;
 
-    // Helper para exibir intervalo de horário (compatível com dados antigos "time")
     function formatarHorario(a) {
         if (a.timeStart && a.timeEnd) return `${a.timeStart} - ${a.timeEnd}`;
-        if (a.timeStart) return a.timeStart;
-        return a.time || '';
+        return a.timeStart || a.time || '';
+    }
+
+    function renderizarKPIs(todosDoMes, labSelecionado) {
+        const totalMes = todosDoMes.length;
+        const diasComAgendamento = new Set(todosDoMes.map(a => a.date)).size;
+        const diasUteis = 22;
+        const ocupacao = Math.min(100, Math.round((diasComAgendamento / diasUteis) * 100));
+        const labsAtivos = new Set(todosDoMes.map(a => a.lab)).size;
+
+        document.getElementById('kpiGrid').innerHTML = `
+            <div class="kpi-card"><span class="label">Agendamentos no Mês</span><b class="value">${totalMes}</b></div>
+            <div class="kpi-card"><span class="label">Laboratórios com Reservas</span><b class="value">${labsAtivos}/7</b></div>
+            <div class="kpi-card"><span class="label">Taxa de Ocupação</span><b class="value">${ocupacao}%</b></div>
+            <div class="kpi-card"><span class="label">Filtro Atual</span><b class="value" style="font-size:1rem;">${labSelecionado === 'todos' ? 'Todos' : labSelecionado.replace('Laboratório de ','')}</b></div>
+        `;
+    }
+
+    function renderizarGraficos(todosDoMes) {
+        const contagemPorLab = {};
+        Object.keys(coresLabs).forEach(l => contagemPorLab[l] = 0);
+        todosDoMes.forEach(a => { if (a.lab) contagemPorLab[a.lab] = (contagemPorLab[a.lab] || 0) + 1; });
+
+        const labels = Object.keys(contagemPorLab).map(l => l.replace("Laboratório de ", ""));
+        const valores = Object.values(contagemPorLab);
+        const cores = Object.keys(contagemPorLab).map(l => corDoLab(l));
+
+        if (chartLabs) chartLabs.destroy();
+        chartLabs = new Chart(document.getElementById('chartLabs'), {
+            type: 'bar',
+            data: { labels, datasets: [{ data: valores, backgroundColor: cores, borderRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { font: { size: 10 } } } } }
+        });
+
+        const diasComAgendamento = new Set(todosDoMes.map(a => a.date)).size;
+        const livre = Math.max(0, 22 - diasComAgendamento);
+
+        if (chartOcupacao) chartOcupacao.destroy();
+        chartOcupacao = new Chart(document.getElementById('chartOcupacao'), {
+            type: 'doughnut',
+            data: { labels: ['Ocupados', 'Livres'], datasets: [{ data: [diasComAgendamento, livre], backgroundColor: ['#00A651', '#E2E8F0'], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }, cutout: '70%' }
+        });
     }
 
     function renderizar() {
@@ -451,60 +354,54 @@
             let todos = data ? Object.values(data) : [];
             appointments = labSelecionado === 'todos' ? todos : todos.filter(a => a.lab === labSelecionado);
 
-            const grid = document.getElementById('calendar');
+            const todosDoMes = appointments.filter(a => a.date && a.date.startsWith(`${anoExibido}-${String(mesExibido+1).padStart(2,'0')}`));
+            renderizarKPIs(todosDoMes, labSelecionado);
+            renderizarGraficos(todosDoMes);
+
             document.getElementById('tituloMes').innerText = `${meses[mesExibido]} ${anoExibido}`;
+
+            const grid = document.getElementById('calendar');
             grid.innerHTML = `<div class="day-name">Dom</div><div class="day-name">Seg</div><div class="day-name">Ter</div><div class="day-name">Qua</div><div class="day-name">Qui</div><div class="day-name">Sex</div><div class="day-name">Sáb</div>`;
 
             const firstDay = new Date(anoExibido, mesExibido, 1).getDay();
             const daysInMonth = new Date(anoExibido, mesExibido + 1, 0).getDate();
 
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="day-cell" style="background:#eee"></div>`;
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="day-cell" style="background:transparent;"></div>`;
 
             for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${anoExibido}-${String(mesExibido+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-                // Se estiver em "todos", o botão + abre modal deixando escolher o lab.
-                // Se estiver em um lab específico sem permissão, desabilita o botão +.
-                const semPermissaoParaEsteLab = (labSelecionado !== 'todos') && !podeEditarLab(labSelecionado);
-                const btnAddHtml = semPermissaoParaEsteLab
-                    ? `<button class="btn-add" disabled title="Sem permissão para editar este laboratório">+</button>`
+                const dateStr = `${anoExibido}-${String(mesExibido+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const semPermissao = (labSelecionado !== 'todos') && !podeEditarLab(labSelecionado);
+                const btnAddHtml = semPermissao
+                    ? `<button class="btn-add" disabled title="Sem permissão">+</button>`
                     : `<button class="btn-add" onclick="abrirModalNovo('${dateStr}')">+</button>`;
 
-                let html = `<div class="day-cell">
-                    ${btnAddHtml}
-                    <span class="day-number">${day}</span>
-                    <div class="event-list" id="list-${dateStr}">`;
+                let html = `<div class="day-cell">${btnAddHtml}<span class="day-number">${day}</span><div class="event-list" id="list-${dateStr}">`;
 
                 appointments.filter(a => a.date === dateStr).forEach(a => {
-                    html += `<div class="event-item" data-id="${a.id}" onclick="abrirModalEdicao('${a.id}')">
-                        <span>${labSelecionado === 'todos' && a.lab ? `<span class="event-lab">${a.lab}</span>` : ''}<strong>${formatarHorario(a)}</strong><br>${a.name}</span>
-                    </div>`;
+                    const cor = corDoLab(a.lab);
+                    html += `<div class="event-item" data-id="${a.id}" style="border-color:${cor};" onclick="abrirModalEdicao('${a.id}')">
+                        ${labSelecionado === 'todos' && a.lab ? `<span class="event-lab">${a.lab}</span>` : ''}
+                        <strong>${formatarHorario(a)}</strong> ${a.name}</div>`;
                 });
                 html += `</div></div>`;
                 grid.innerHTML += html;
 
                 setTimeout(() => {
                     const el = document.getElementById(`list-${dateStr}`);
-                    if(el) new Sortable(el, { group: 'shared', animation: 150 });
+                    if (el) new Sortable(el, { group: 'shared', animation: 150 });
                 }, 10);
             }
         });
     }
 
-    /* ===== CONTROLE DO MODAL ===== */
-
-    function limparErros() {
-        document.querySelectorAll('.form-group').forEach(g => g.classList.remove('invalid'));
-    }
+    function limparErros() { document.querySelectorAll('.form-group').forEach(g => g.classList.remove('invalid')); }
 
     function abrirModalNovo(dataStr) {
         const labAtual = document.getElementById('selectLabAdm').value;
-
         if (labAtual !== 'todos' && !podeEditarLab(labAtual)) {
             mostrarAvisoAcesso("Você não tem permissão para agendar neste laboratório.");
             return;
         }
-
         editandoId = null;
         limparErros();
         document.getElementById('modalTitulo').innerText = "Novo Agendamento";
@@ -513,12 +410,7 @@
         document.getElementById('inputHoraInicio').value = "";
         document.getElementById('inputHoraFim').value = "";
         document.getElementById('inputNome').value = "";
-
-        document.getElementById('grpLab').style.display = 'block';
-        document.getElementById('inputLab').value = (labAtual === 'todos')
-            ? document.getElementById('inputLab').options[0].value
-            : labAtual;
-
+        document.getElementById('inputLab').value = (labAtual === 'todos') ? document.getElementById('inputLab').options[0].value : labAtual;
         document.getElementById('btnExcluirModal').style.display = 'none';
         document.getElementById('modalOverlay').classList.add('active');
     }
@@ -526,36 +418,24 @@
     function abrirModalEdicao(id) {
         const app = appointments.find(a => a.id === id);
         if (!app) return;
-
-        if (!podeEditarLab(app.lab)) {
-            mostrarAvisoAcesso("Você não tem permissão para editar agendamentos deste laboratório.");
-            return;
-        }
-
+        if (!podeEditarLab(app.lab)) { mostrarAvisoAcesso("Sem permissão para editar este laboratório."); return; }
         editandoId = id;
         limparErros();
-
         document.getElementById('modalTitulo').innerText = "Editar Agendamento";
         document.getElementById('modalSubtitulo').innerText = "Atualize os dados da reserva";
         document.getElementById('inputData').value = app.date;
         document.getElementById('inputHoraInicio').value = app.timeStart || app.time || "";
         document.getElementById('inputHoraFim').value = app.timeEnd || "";
         document.getElementById('inputNome').value = app.name;
-        document.getElementById('grpLab').style.display = 'block';
         document.getElementById('inputLab').value = app.lab || document.getElementById('inputLab').options[0].value;
-
         document.getElementById('btnExcluirModal').style.display = 'block';
         document.getElementById('modalOverlay').classList.add('active');
     }
 
-    function fecharModal() {
-        document.getElementById('modalOverlay').classList.remove('active');
-        editandoId = null;
-    }
+    function fecharModal() { document.getElementById('modalOverlay').classList.remove('active'); editandoId = null; }
 
     function salvarModal() {
         limparErros();
-
         const lab = document.getElementById('inputLab').value;
         const data = document.getElementById('inputData').value;
         const horaInicio = document.getElementById('inputHoraInicio').value;
@@ -570,63 +450,34 @@
         if (!nome) { document.getElementById('grpNome').classList.add('invalid'); valido = false; }
         if (!valido) return;
 
-        // Verificação de permissão antes de gravar (o Firebase Rules é a barreira final)
-        if (!podeEditarLab(lab)) {
-            mostrarAvisoAcesso("Você não tem permissão para agendar neste laboratório.");
-            return;
-        }
+        if (!podeEditarLab(lab)) { mostrarAvisoAcesso("Sem permissão para agendar neste laboratório."); return; }
 
         const btn = document.getElementById('btnSalvarModal');
-        btn.disabled = true;
-        btn.innerText = "Salvando...";
+        btn.disabled = true; btn.innerText = "Salvando...";
 
-        const payload = {
-            date: data,
-            timeStart: horaInicio,
-            timeEnd: horaFim,
-            time: `${horaInicio} - ${horaFim}`, // compatibilidade com dados antigos
-            name: nome,
-            lab: lab
-        };
+        const payload = { date: data, timeStart: horaInicio, timeEnd: horaFim, time: `${horaInicio} - ${horaFim}`, name: nome, lab: lab };
 
         const promise = editandoId
             ? database.ref('agendamentos/' + editandoId).update(payload)
-            : (() => {
-                const id = Date.now().toString();
-                return database.ref('agendamentos/' + id).set({ ...payload, id });
-            })();
+            : (() => { const id = Date.now().toString(); return database.ref('agendamentos/' + id).set({ ...payload, id }); })();
 
-        promise
-            .then(() => { fecharModal(); })
-            .catch((e) => alert("Erro ao salvar: " + e.message))
+        promise.then(() => fecharModal())
+            .catch(e => alert("Erro ao salvar: " + e.message))
             .finally(() => { btn.disabled = false; btn.innerText = "Salvar"; });
     }
 
     function excluirDoModal() {
         if (!editandoId) return;
-
         const app = appointments.find(a => a.id === editandoId);
-        if (app && !podeEditarLab(app.lab)) {
-            mostrarAvisoAcesso("Você não tem permissão para excluir agendamentos deste laboratório.");
-            return;
-        }
-
+        if (app && !podeEditarLab(app.lab)) { mostrarAvisoAcesso("Sem permissão para excluir."); return; }
         if (confirm("Deseja realmente excluir este agendamento?")) {
-            database.ref('agendamentos/' + editandoId).remove()
-                .then(() => fecharModal())
-                .catch(e => alert("Erro ao excluir: " + e.message));
+            database.ref('agendamentos/' + editandoId).remove().then(fecharModal).catch(e => alert("Erro: " + e.message));
         }
     }
 
-    document.getElementById('modalOverlay').addEventListener('click', function(e) {
-        if (e.target === this) fecharModal();
-    });
+    document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) fecharModal(); });
 
-    /* ===== NAVEGAÇÃO / LOGOUT ===== */
-
-    function fazerLogout() {
-        auth.signOut().then(() => window.location.href = "login.html");
-    }
+    function fazerLogout() { auth.signOut().then(() => window.location.href = "login.html"); }
 
     function mudarMes(d) {
         mesExibido += d;
