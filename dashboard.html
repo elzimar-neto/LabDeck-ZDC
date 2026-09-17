@@ -339,14 +339,32 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { font: { size: 10 } } } } }
         });
 
-        const diasComAgendamento = new Set(todosDoMes.map(a => a.date)).size;
-        const livre = Math.max(0, 22 - diasComAgendamento);
+        /* ===== OCUPAÇÃO DO MÊS: por dia agrupado por laboratório ===== */
+        const diasOcupadosPorLab = {};
+        Object.keys(coresLabs).forEach(l => diasOcupadosPorLab[l] = new Set());
+        todosDoMes.forEach(a => { if (a.lab && a.date) diasOcupadosPorLab[a.lab].add(a.date); });
+
+        const diasUteis = 22;
+        const totalDiasOcupados = new Set(todosDoMes.map(a => a.date)).size;
+        const diasLivres = Math.max(0, diasUteis - totalDiasOcupados);
+
+        const labsComDados = Object.keys(diasOcupadosPorLab).filter(l => diasOcupadosPorLab[l].size > 0);
+        const labelsOcupacao = [...labsComDados.map(l => l.replace("Laboratório de ", "")), 'Livre'];
+        const valoresOcupacao = [...labsComDados.map(l => diasOcupadosPorLab[l].size), diasLivres];
+        const coresOcupacao = [...labsComDados.map(l => corDoLab(l)), '#E2E8F0'];
 
         if (chartOcupacao) chartOcupacao.destroy();
         chartOcupacao = new Chart(document.getElementById('chartOcupacao'), {
             type: 'doughnut',
-            data: { labels: ['Ocupados', 'Livres'], datasets: [{ data: [diasComAgendamento, livre], backgroundColor: ['#00A651', '#E2E8F0'], borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }, cutout: '70%' }
+            data: {
+                labels: labelsOcupacao,
+                datasets: [{ data: valoresOcupacao, backgroundColor: coresOcupacao, borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                cutout: '70%'
+            }
         });
     }
 
@@ -450,7 +468,6 @@
         if (!lab) { document.getElementById('grpLab').classList.add('invalid'); valido = false; }
         if (!data) { document.getElementById('grpData').classList.add('invalid'); valido = false; }
 
-        // Validação do horário de funcionamento: 07:30 às 22:00
         if (!horaInicio || horaInicio < HORA_ABERTURA || horaInicio > HORA_FECHAMENTO) {
             document.getElementById('grpHoraInicio').classList.add('invalid'); valido = false;
         }
