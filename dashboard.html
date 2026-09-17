@@ -91,7 +91,7 @@
         border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; margin-bottom: 14px; display: none;
     }
 
-    /* Modal (mesmo padrão anterior) */
+    /* Modal */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(7,26,15,0.6); backdrop-filter: blur(3px); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.active { display: flex; }
     .modal-box { background: #fff; width: 100%; max-width: 460px; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.35); max-height: 92vh; overflow-y: auto; }
@@ -215,13 +215,13 @@
             <div class="form-row">
                 <div class="form-group" id="grpHoraInicio">
                     <label>Hora Inicial</label>
-                    <input type="time" id="inputHoraInicio">
-                    <div class="field-error">Informe a hora inicial.</div>
+                    <input type="time" id="inputHoraInicio" min="07:30" max="22:00">
+                    <div class="field-error">Informe uma hora inicial entre 07:30 e 22:00.</div>
                 </div>
                 <div class="form-group" id="grpHoraFim">
                     <label>Hora Final</label>
-                    <input type="time" id="inputHoraFim">
-                    <div class="field-error">A hora final deve ser maior.</div>
+                    <input type="time" id="inputHoraFim" min="07:30" max="22:00">
+                    <div class="field-error">A hora final deve ser maior e não passar de 22:00.</div>
                 </div>
             </div>
             <div class="form-group" id="grpNome">
@@ -229,7 +229,7 @@
                 <input type="text" id="inputNome" placeholder="Ex: João Silva - Turma 2ºA">
                 <div class="field-error">Informe o nome do responsável.</div>
             </div>
-            <div class="form-note">ℹ️ Horário de funcionamento: 08h às 12h e 14h às 17h.</div>
+            <div class="form-note">ℹ️ Horário de funcionamento: 07h30 às 22h00.</div>
         </div>
         <div class="modal-footer">
             <button class="btn-modal btn-delete-modal" id="btnExcluirModal" onclick="excluirDoModal()" style="display:none;">Excluir</button>
@@ -251,6 +251,10 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const auth = firebase.auth();
+
+    /* ===== HORÁRIO DE FUNCIONAMENTO ===== */
+    const HORA_ABERTURA = "07:30";
+    const HORA_FECHAMENTO = "22:00";
 
     const coresLabs = {
         "Laboratório de Informática I": "#00A651", "Laboratório de Informática II": "#3B82F6",
@@ -445,8 +449,15 @@
         let valido = true;
         if (!lab) { document.getElementById('grpLab').classList.add('invalid'); valido = false; }
         if (!data) { document.getElementById('grpData').classList.add('invalid'); valido = false; }
-        if (!horaInicio) { document.getElementById('grpHoraInicio').classList.add('invalid'); valido = false; }
-        if (!horaFim || (horaInicio && horaFim <= horaInicio)) { document.getElementById('grpHoraFim').classList.add('invalid'); valido = false; }
+
+        // Validação do horário de funcionamento: 07:30 às 22:00
+        if (!horaInicio || horaInicio < HORA_ABERTURA || horaInicio > HORA_FECHAMENTO) {
+            document.getElementById('grpHoraInicio').classList.add('invalid'); valido = false;
+        }
+        if (!horaFim || horaFim <= horaInicio || horaFim > HORA_FECHAMENTO) {
+            document.getElementById('grpHoraFim').classList.add('invalid'); valido = false;
+        }
+
         if (!nome) { document.getElementById('grpNome').classList.add('invalid'); valido = false; }
         if (!valido) return;
 

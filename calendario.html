@@ -127,11 +127,19 @@
     footer { text-align: center; padding: 24px; color: #94a3b8; font-size: 0.8rem; }
 
     /* ===== EASTER EGG: MAMUTINHO ===== */
+    #mamuteContainer {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        z-index: 40;
+    }
+
     .mamute-easter-egg {
         position: absolute;
-        font-size: 2.2rem;
+        font-size: 1.4rem;
         z-index: 50;
         cursor: pointer;
+        pointer-events: auto;
         filter: drop-shadow(0 4px 8px rgba(0,166,81,0.4));
         animation: mamute-pop 0.5s ease, mamute-float 2.5s ease-in-out infinite;
         transition: transform 0.2s ease;
@@ -235,8 +243,8 @@
     </div>
 
     <!-- ===== ABA ESTATÍSTICAS ===== -->
-    <div class="tab-content" id="tabEstatisticas">
-        <div id="mamuteContainer" style="position: relative;"></div>
+    <div class="tab-content" id="tabEstatisticas" style="position: relative;">
+        <div id="mamuteContainer"></div>
 
         <div class="kpi-grid" id="kpiGrid"></div>
 
@@ -335,8 +343,8 @@
         mamute.innerText = '🦣';
         mamute.style.color = '#00A651';
 
-        const top = Math.floor(Math.random() * 60) + 5;
-        const left = Math.floor(Math.random() * 85) + 2;
+        const top = Math.floor(Math.random() * 90) + 2;
+        const left = Math.floor(Math.random() * 92) + 2;
         mamute.style.top = top + '%';
         mamute.style.left = left + '%';
 
