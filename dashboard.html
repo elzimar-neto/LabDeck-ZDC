@@ -85,6 +85,7 @@
             font-size: 1rem; line-height: 1; transition: transform 0.15s ease;
         }
         .btn-add:hover { transform: scale(1.15); }
+        .btn-add:disabled { background: #a0aec0; cursor: not-allowed; transform: none; }
 
         .event-item {
             background: #fff; border: 1px solid #ddd; border-left: 5px solid var(--ifma-gold);
@@ -249,6 +250,19 @@
         .form-group.invalid input, .form-group.invalid select { border-color: #dc2626; }
         .form-group.invalid .field-error { display: block; }
 
+        .acesso-negado-banner {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .calendar-grid { grid-template-columns: 1fr; }
             .day-name { display: none; }
@@ -273,11 +287,14 @@
         <option value="Laboratório de Informática II">Laboratório de Informática II</option>
         <option value="Laboratório de Alimentos">Laboratório de Alimentos</option>
         <option value="Laboratório de Matemática">Laboratório de Matemática</option>
-        <option value="Laboratório de Química">Laboratório de Química</option>
+        <option value="Laboratório de Química I">Laboratório de Química I</option>
+        <option value="Laboratório de Química II">Laboratório de Química II</option>
         <option value="Laboratório de Biocombustíveis">Laboratório de Biocombustíveis</option>
         <option value="todos">Ver todos os laboratórios</option>
     </select>
 </div>
+
+<div id="avisoAcesso" class="acesso-negado-banner"></div>
 
 <div class="nav-controls" id="navControls" style="display:none;">
     <button onclick="mudarMes(-1)">◀</button>
@@ -312,7 +329,8 @@
                     <option value="Laboratório de Informática II">Laboratório de Informática II</option>
                     <option value="Laboratório de Alimentos">Laboratório de Alimentos</option>
                     <option value="Laboratório de Matemática">Laboratório de Matemática</option>
-                    <option value="Laboratório de Química">Laboratório de Química</option>
+                    <option value="Laboratório de Química I">Laboratório de Química I</option>
+                    <option value="Laboratório de Química II">Laboratório de Química II</option>
                     <option value="Laboratório de Biocombustíveis">Laboratório de Biocombustíveis</option>
                 </select>
                 <div class="field-error">Selecione o laboratório.</div>
@@ -371,19 +389,45 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
+    let emailUsuarioAtual = null;
+    let mapaEditores = {}; // { "Laboratório X": "email@..." }
+
     auth.onAuthStateChanged((user) => {
         if (user) {
+            emailUsuarioAtual = user.email;
             document.getElementById('headerAdmin').style.display = 'flex';
             document.getElementById('labSelectBar').style.display = 'flex';
             document.getElementById('navControls').style.display = 'flex';
             document.getElementById('calendar').style.display = 'grid';
             document.getElementById('footerApp').style.display = 'block';
             document.getElementById('loading').style.display = 'none';
-            renderizar();
+
+            // Carrega o mapa de editores permitidos por laboratório
+            database.ref('labs').once('value').then((snap) => {
+                const data = snap.val() || {};
+                Object.keys(data).forEach(lab => {
+                    mapaEditores[lab] = data[lab].editorEmail || null;
+                });
+                renderizar();
+            });
         } else {
             window.location.href = "login.html";
         }
     });
+
+    // Verifica se o usuário logado pode editar o laboratório informado
+    function podeEditarLab(lab) {
+        if (!lab || !emailUsuarioAtual) return false;
+        const emailPermitido = mapaEditores[lab];
+        return emailPermitido && emailPermitido.toLowerCase() === emailUsuarioAtual.toLowerCase();
+    }
+
+    function mostrarAvisoAcesso(msg) {
+        const el = document.getElementById('avisoAcesso');
+        el.innerText = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
 
     const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
     let hoje = new Date();
@@ -406,7 +450,7 @@
             const data = snapshot.val();
             let todos = data ? Object.values(data) : [];
             appointments = labSelecionado === 'todos' ? todos : todos.filter(a => a.lab === labSelecionado);
-            
+
             const grid = document.getElementById('calendar');
             document.getElementById('tituloMes').innerText = `${meses[mesExibido]} ${anoExibido}`;
             grid.innerHTML = `<div class="day-name">Dom</div><div class="day-name">Seg</div><div class="day-name">Ter</div><div class="day-name">Qua</div><div class="day-name">Qui</div><div class="day-name">Sex</div><div class="day-name">Sáb</div>`;
@@ -418,11 +462,19 @@
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${anoExibido}-${String(mesExibido+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                // Se estiver em "todos", o botão + abre modal deixando escolher o lab.
+                // Se estiver em um lab específico sem permissão, desabilita o botão +.
+                const semPermissaoParaEsteLab = (labSelecionado !== 'todos') && !podeEditarLab(labSelecionado);
+                const btnAddHtml = semPermissaoParaEsteLab
+                    ? `<button class="btn-add" disabled title="Sem permissão para editar este laboratório">+</button>`
+                    : `<button class="btn-add" onclick="abrirModalNovo('${dateStr}')">+</button>`;
+
                 let html = `<div class="day-cell">
-                    <button class="btn-add" onclick="abrirModalNovo('${dateStr}')">+</button>
+                    ${btnAddHtml}
                     <span class="day-number">${day}</span>
                     <div class="event-list" id="list-${dateStr}">`;
-                
+
                 appointments.filter(a => a.date === dateStr).forEach(a => {
                     html += `<div class="event-item" data-id="${a.id}" onclick="abrirModalEdicao('${a.id}')">
                         <span>${labSelecionado === 'todos' && a.lab ? `<span class="event-lab">${a.lab}</span>` : ''}<strong>${formatarHorario(a)}</strong><br>${a.name}</span>
@@ -430,7 +482,7 @@
                 });
                 html += `</div></div>`;
                 grid.innerHTML += html;
-                
+
                 setTimeout(() => {
                     const el = document.getElementById(`list-${dateStr}`);
                     if(el) new Sortable(el, { group: 'shared', animation: 150 });
@@ -446,6 +498,13 @@
     }
 
     function abrirModalNovo(dataStr) {
+        const labAtual = document.getElementById('selectLabAdm').value;
+
+        if (labAtual !== 'todos' && !podeEditarLab(labAtual)) {
+            mostrarAvisoAcesso("Você não tem permissão para agendar neste laboratório.");
+            return;
+        }
+
         editandoId = null;
         limparErros();
         document.getElementById('modalTitulo').innerText = "Novo Agendamento";
@@ -455,7 +514,6 @@
         document.getElementById('inputHoraFim').value = "";
         document.getElementById('inputNome').value = "";
 
-        const labAtual = document.getElementById('selectLabAdm').value;
         document.getElementById('grpLab').style.display = 'block';
         document.getElementById('inputLab').value = (labAtual === 'todos')
             ? document.getElementById('inputLab').options[0].value
@@ -468,6 +526,12 @@
     function abrirModalEdicao(id) {
         const app = appointments.find(a => a.id === id);
         if (!app) return;
+
+        if (!podeEditarLab(app.lab)) {
+            mostrarAvisoAcesso("Você não tem permissão para editar agendamentos deste laboratório.");
+            return;
+        }
+
         editandoId = id;
         limparErros();
 
@@ -506,6 +570,12 @@
         if (!nome) { document.getElementById('grpNome').classList.add('invalid'); valido = false; }
         if (!valido) return;
 
+        // Verificação de permissão antes de gravar (o Firebase Rules é a barreira final)
+        if (!podeEditarLab(lab)) {
+            mostrarAvisoAcesso("Você não tem permissão para agendar neste laboratório.");
+            return;
+        }
+
         const btn = document.getElementById('btnSalvarModal');
         btn.disabled = true;
         btn.innerText = "Salvando...";
@@ -534,6 +604,13 @@
 
     function excluirDoModal() {
         if (!editandoId) return;
+
+        const app = appointments.find(a => a.id === editandoId);
+        if (app && !podeEditarLab(app.lab)) {
+            mostrarAvisoAcesso("Você não tem permissão para excluir agendamentos deste laboratório.");
+            return;
+        }
+
         if (confirm("Deseja realmente excluir este agendamento?")) {
             database.ref('agendamentos/' + editandoId).remove()
                 .then(() => fecharModal())
