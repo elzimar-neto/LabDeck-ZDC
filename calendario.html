@@ -84,7 +84,6 @@
             flex-direction: column;
         }
 
-        /* BARRA UNIFICADA (sem borda lateral) */
         .toolbar {
             background: white;
             border-radius: var(--radius);
@@ -98,12 +97,7 @@
             justify-content: space-between;
         }
 
-        .toolbar-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .toolbar-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
         .toolbar-group label {
             font-weight: 700;
@@ -332,7 +326,7 @@
     <div class="header-titles">
         <h1>LabDeck - ZDC</h1>
         <p>
-            <a href="https://www.zedoca.ifma.edu.br/" target="_blank">
+            <a href="https://zedoca.ifma.edu.br/" target="_blank">
                Instituto Federal do Maranhão - Campus Zé Doca
             </a>
         </p>
@@ -373,7 +367,7 @@
                 <li>• A reserva deve ser feita com antecedência mínima de 24 horas antes do horário desejado.</li>
                 <li>• Horário de funcionamento: 08H às 12H e 14H às 17H.</li>
                 <li>• Solicitação via e-mail para o setor responsável pelo laboratório desejado.</li>
-                <li>• Dados necessários: Nome, vínculo, laboratório, data, horário, duração, nº de participantes e finalidade.</li>
+                <li>• Dados necessários: Nome, vínculo, laboratório, data, horário de início/fim, nº de participantes e finalidade.</li>
                 <li>• Cancelamentos devem ser comunicados o mais breve possível.</li>
             </ul>
         </div>
@@ -421,6 +415,13 @@
     }
 
     function desativarAmpliador() { ampliador.style.display = 'none'; }
+
+    // Helper para exibir intervalo de horário (compatível com dados antigos "time")
+    function formatarHorario(a) {
+        if (a.timeStart && a.timeEnd) return `${a.timeStart} - ${a.timeEnd}`;
+        if (a.timeStart) return a.timeStart;
+        return a.time || '';
+    }
 
     function obterFeriadosFixos(ano) {
         return {
@@ -511,7 +512,7 @@
                                   onmousemove="moverAmpliador(event)" 
                                   onmouseleave="desativarAmpliador()"
                                   ontouchstart="ativarAmpliador(this); moverAmpliador(event.touches[0]); event.stopPropagation();">
-                                  <b>${a.time}</b>
+                                  <b>${formatarHorario(a)}</b>
                                   ${a.lab ? `<span class="event-lab-tag">${a.lab}</span>` : ''}
                                   <span class="event-title">${a.name}</span>
                              </div>`;

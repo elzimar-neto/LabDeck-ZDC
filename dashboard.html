@@ -115,11 +115,13 @@
         .modal-box {
             background: #ffffff;
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 30px 60px rgba(0,0,0,0.35);
             animation: modalIn 0.25s ease-out;
+            max-height: 92vh;
+            overflow-y: auto;
         }
 
         @keyframes modalIn {
@@ -316,15 +318,22 @@
                 <div class="field-error">Selecione o laboratório.</div>
             </div>
 
+            <div class="form-group" id="grpData">
+                <label for="inputData">Data</label>
+                <input type="date" id="inputData">
+                <div class="field-error">Informe a data.</div>
+            </div>
+
             <div class="form-row">
-                <div class="form-group">
-                    <label for="inputData">Data</label>
-                    <input type="date" id="inputData">
+                <div class="form-group" id="grpHoraInicio">
+                    <label for="inputHoraInicio">Hora Inicial</label>
+                    <input type="time" id="inputHoraInicio">
+                    <div class="field-error">Informe a hora inicial.</div>
                 </div>
-                <div class="form-group">
-                    <label for="inputHora">Horário</label>
-                    <input type="time" id="inputHora">
-                    <div class="field-error">Informe o horário.</div>
+                <div class="form-group" id="grpHoraFim">
+                    <label for="inputHoraFim">Hora Final</label>
+                    <input type="time" id="inputHoraFim">
+                    <div class="field-error">A hora final deve ser maior que a inicial.</div>
                 </div>
             </div>
 
@@ -335,7 +344,7 @@
             </div>
 
             <div class="form-note">
-                ℹ️ Confirme o horário de funcionamento: 08h às 12h e 14h às 17h.
+                ℹ️ Horário de funcionamento: 08h às 12h e 14h às 17h.
             </div>
         </div>
 
@@ -381,7 +390,14 @@
     let mesExibido = hoje.getMonth();
     let anoExibido = hoje.getFullYear();
     let appointments = [];
-    let editandoId = null; // null = novo cadastro / com valor = edição
+    let editandoId = null;
+
+    // Helper para exibir intervalo de horário (compatível com dados antigos "time")
+    function formatarHorario(a) {
+        if (a.timeStart && a.timeEnd) return `${a.timeStart} - ${a.timeEnd}`;
+        if (a.timeStart) return a.timeStart;
+        return a.time || '';
+    }
 
     function renderizar() {
         const labSelecionado = document.getElementById('selectLabAdm').value;
@@ -409,7 +425,7 @@
                 
                 appointments.filter(a => a.date === dateStr).forEach(a => {
                     html += `<div class="event-item" data-id="${a.id}" onclick="abrirModalEdicao('${a.id}')">
-                        <span>${labSelecionado === 'todos' && a.lab ? `<span class="event-lab">${a.lab}</span>` : ''}<strong>${a.time}</strong><br>${a.name}</span>
+                        <span>${labSelecionado === 'todos' && a.lab ? `<span class="event-lab">${a.lab}</span>` : ''}<strong>${formatarHorario(a)}</strong><br>${a.name}</span>
                     </div>`;
                 });
                 html += `</div></div>`;
@@ -435,19 +451,15 @@
         document.getElementById('modalTitulo').innerText = "Novo Agendamento";
         document.getElementById('modalSubtitulo').innerText = "Preencha os dados da reserva";
         document.getElementById('inputData').value = dataStr;
-        document.getElementById('inputHora').value = "";
+        document.getElementById('inputHoraInicio').value = "";
+        document.getElementById('inputHoraFim').value = "";
         document.getElementById('inputNome').value = "";
 
         const labAtual = document.getElementById('selectLabAdm').value;
-        const grpLab = document.getElementById('grpLab');
-
-        if (labAtual === 'todos') {
-            grpLab.style.display = 'block';
-            document.getElementById('inputLab').value = document.getElementById('inputLab').options[0].value;
-        } else {
-            grpLab.style.display = 'block';
-            document.getElementById('inputLab').value = labAtual;
-        }
+        document.getElementById('grpLab').style.display = 'block';
+        document.getElementById('inputLab').value = (labAtual === 'todos')
+            ? document.getElementById('inputLab').options[0].value
+            : labAtual;
 
         document.getElementById('btnExcluirModal').style.display = 'none';
         document.getElementById('modalOverlay').classList.add('active');
@@ -462,7 +474,8 @@
         document.getElementById('modalTitulo').innerText = "Editar Agendamento";
         document.getElementById('modalSubtitulo').innerText = "Atualize os dados da reserva";
         document.getElementById('inputData').value = app.date;
-        document.getElementById('inputHora').value = app.time;
+        document.getElementById('inputHoraInicio').value = app.timeStart || app.time || "";
+        document.getElementById('inputHoraFim').value = app.timeEnd || "";
         document.getElementById('inputNome').value = app.name;
         document.getElementById('grpLab').style.display = 'block';
         document.getElementById('inputLab').value = app.lab || document.getElementById('inputLab').options[0].value;
@@ -481,24 +494,37 @@
 
         const lab = document.getElementById('inputLab').value;
         const data = document.getElementById('inputData').value;
-        const hora = document.getElementById('inputHora').value;
+        const horaInicio = document.getElementById('inputHoraInicio').value;
+        const horaFim = document.getElementById('inputHoraFim').value;
         const nome = document.getElementById('inputNome').value.trim();
 
         let valido = true;
-        if (!hora) { document.getElementById('grpNome').parentElement; document.getElementById('inputHora').closest('.form-group').classList.add('invalid'); valido = false; }
-        if (!nome) { document.getElementById('grpNome').classList.add('invalid'); valido = false; }
         if (!lab) { document.getElementById('grpLab').classList.add('invalid'); valido = false; }
+        if (!data) { document.getElementById('grpData').classList.add('invalid'); valido = false; }
+        if (!horaInicio) { document.getElementById('grpHoraInicio').classList.add('invalid'); valido = false; }
+        if (!horaFim || (horaInicio && horaFim <= horaInicio)) { document.getElementById('grpHoraFim').classList.add('invalid'); valido = false; }
+        if (!nome) { document.getElementById('grpNome').classList.add('invalid'); valido = false; }
         if (!valido) return;
 
         const btn = document.getElementById('btnSalvarModal');
         btn.disabled = true;
         btn.innerText = "Salvando...";
 
-        const payload = { date: data, time: hora, name: nome, lab: lab };
+        const payload = {
+            date: data,
+            timeStart: horaInicio,
+            timeEnd: horaFim,
+            time: `${horaInicio} - ${horaFim}`, // compatibilidade com dados antigos
+            name: nome,
+            lab: lab
+        };
 
         const promise = editandoId
             ? database.ref('agendamentos/' + editandoId).update(payload)
-            : database.ref('agendamentos/' + Date.now()).set({ ...payload, id: Date.now().toString() });
+            : (() => {
+                const id = Date.now().toString();
+                return database.ref('agendamentos/' + id).set({ ...payload, id });
+            })();
 
         promise
             .then(() => { fecharModal(); })
